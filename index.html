@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A free, simple tracker for making up missed prayers (qada). No ads, no account.">
+<meta name="theme-color" content="#1f6b5a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1816" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Qada">
+<style>:root{padding-top:env(safe-area-inset-top,0px)}</style>
+<title>Qada Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Public+Sans:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap">
+<style>
+/* Layout: phone-first single column; full-screen setup, then three tabs (Today, Progress, Settings) over a fixed bottom bar */
+:root{
+  --bg:#eef3f1; --surface:#ffffff; --ink:#14302a; --muted:#566b65; --line:#d5e0dc;
+  --accent:#1f6b5a; --accent-ink:#ffffff; --gold:#a8792a; --soft:#e2eeea; --warn:#a4462f;
+  --display:"Literata",Georgia,serif; --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --ar:"Amiri","Geeza Pro","Times New Roman",serif;
+  --tabh:64px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1816; --surface:#15221f; --ink:#e3ece9; --muted:#9bb0a9; --line:#263833;
+  --accent:#5cc0a5; --accent-ink:#0d1816; --gold:#d8aa5a; --soft:#1b2d29; --warn:#e58a72; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1816; --surface:#15221f; --ink:#e3ece9; --muted:#9bb0a9; --line:#263833;
+  --accent:#5cc0a5; --accent-ink:#0d1816; --gold:#d8aa5a; --soft:#1b2d29; --warn:#e58a72; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:1.75rem}
+h2{font-size:1.2rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.ar{font-family:var(--ar);color:var(--gold);font-size:1.15rem;line-height:1}
+.num{font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;border:1px solid var(--line);background:var(--surface);padding:14px 18px;font-weight:600;min-height:52px}
+.btn.prim{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.danger{color:var(--warn)}
+.btn:disabled{opacity:.45;cursor:default}
+
+/* ---------- Setup ---------- */
+#onboard{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+#onboard .wrap{flex:1;display:flex;flex-direction:column;padding-block:24px;gap:24px;width:100%}
+.dots{display:flex;gap:6px}
+.dots i{height:6px;flex:1;border-radius:3px;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.ob-body{flex:1;display:flex;flex-direction:column;gap:16px}
+.ob-body h1{font-size:1.65rem}
+.ob-foot{display:flex;gap:10px}
+.ob-foot .btn{flex:1}
+.ob-foot .btn.ghost{flex:0 0 auto}
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:center}
+.stepper button{height:64px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-size:1.6rem;font-weight:600}
+.stepper input{height:64px;text-align:center;font-family:var(--display);font-size:2rem;font-weight:700;border:1px solid var(--line);border-radius:16px;background:var(--surface);width:100%;min-width:0}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:.9rem;font-weight:600}
+.chip.on{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.choice{display:flex;flex-direction:column;gap:4px;text-align:left;border:2px solid var(--line);background:var(--surface);border-radius:18px;padding:16px;width:100%}
+.choice.on{border-color:var(--accent);background:var(--soft)}
+.choice b{font-size:1.05rem}
+.err{color:var(--warn);font-size:.9rem;font-weight:600}
+.hero-mark{width:72px;height:72px}
+.result-num{font-family:var(--display);font-size:3.2rem;font-weight:700;color:var(--accent);line-height:1}
+
+/* ---------- App shell ---------- */
+main.wrap{padding-block:20px calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:20px}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabbar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+.tab{height:var(--tabh);border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.75rem;font-weight:600;color:var(--muted)}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 14px);z-index:30;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:600;font-size:.92rem;max-width:min(440px,calc(100% - 32px));text-align:center;box-shadow:0 6px 24px rgb(0 0 0 / .18)}
+.banner{background:var(--soft);border-radius:14px;padding:12px 14px;font-size:.9rem}
+
+/* Today */
+.dateline{display:flex;flex-direction:column;gap:2px}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.ring{width:112px;height:112px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.25rem}
+.left-num{font-family:var(--display);font-size:2.3rem;font-weight:700;line-height:1.05;color:var(--accent)}
+.streak{display:inline-flex;align-items:center;gap:6px;background:var(--soft);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:700;margin-top:8px;width:fit-content}
+.streak svg{width:16px;height:16px;color:var(--gold)}
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.plist{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.prow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:14px 14px 14px 16px;border-top:1px solid var(--line);min-height:76px}
+.prow:first-child{border-top:0}
+.prow.complete{background:var(--soft)}
+.pname{display:flex;align-items:baseline;gap:8px}
+.pname b{font-size:1.08rem}
+.proutine{font-size:.84rem;color:var(--muted)}
+.proutine em{font-style:normal;color:var(--ink);font-weight:700}
+.undo{border:0;background:none;color:var(--muted);font-size:.82rem;font-weight:600;padding:8px 4px;text-decoration:underline;text-underline-offset:3px}
+.pbtn{width:56px;height:56px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-weight:700;font-size:.95rem;color:var(--muted)}
+.pbtn svg{width:26px;height:26px}
+.pbtn.part{border-color:var(--accent);color:var(--accent)}
+.prow.complete .pbtn{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.quote{border-left:3px solid var(--gold);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:4px}
+.quote p:first-child{font-family:var(--display);font-size:1.02rem}
+
+/* Progress */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:2px}
+.stat .v{font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1.15}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-family:var(--body);font-size:10px;fill:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:12px}
+.barrow{display:grid;grid-template-columns:72px 1fr auto;gap:10px;align-items:center;font-size:.9rem}
+.track{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.track i{display:block;height:100%;background:var(--gold);border-radius:4px}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:12px 6px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-size:.78rem;font-weight:600;line-height:1.25}
+.badge .medal{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:.9rem;background:var(--soft);color:var(--muted)}
+.badge.got .medal{background:var(--gold);color:var(--surface)}
+.badge:not(.got){color:var(--muted)}
+
+/* Settings */
+.field{display:flex;flex-direction:column;gap:6px}
+.field input,.field select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;min-height:48px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;min-height:84px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1 1 150px}
+.about p+p{margin-top:8px}
+
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.93rem}
+.install{border-color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+  .ring circle{transition:stroke-dashoffset .5s ease}
+  .pbtn{transition:transform .12s ease,background .15s}
+  .pbtn:active{transform:scale(.92)}
+  .prow.pop .pbtn{animation:pop .45s ease}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+}
+</style>
+</head>
+<body>
+<script>window.QADA_HOSTED=true;</script>
+<div id="onboard" hidden></div>
+<div id="app" hidden>
+  <main class="wrap" id="screen"></main>
+  <nav class="tabbar" aria-label="Sections"><div class="in">
+    <button class="tab" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Today</button>
+    <button class="tab" data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"/></svg>Progress</button>
+    <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</button>
+  </div></nav>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- Data ---------- */
+var PRAYERS=[
+  {k:"fajr",n:"Fajr",a:"الفجر",r:2,routine:"2 sunnah · 2 fard"},
+  {k:"dhuhr",n:"Dhuhr",a:"الظهر",r:4,routine:"4 sunnah · 4 fard · 2 sunnah"},
+  {k:"asr",n:"Asr",a:"العصر",r:4,routine:"4 fard"},
+  {k:"maghrib",n:"Maghrib",a:"المغرب",r:3,routine:"3 fard · 2 sunnah"},
+  {k:"isha",n:"Isha",a:"العشاء",r:4,routine:"4 fard · 2 sunnah"},
+  {k:"witr",n:"Witr",a:"الوتر",r:3,routine:"3 rak'at with qunut",hanafi:true}
+];
+var QUOTES=[
+  ["“The most beloved deeds to Allah are those done consistently, even if they are small.”","Bukhari and Muslim"],
+  ["“Whoever forgets a prayer or sleeps through it, its expiation is to pray it when he remembers.”","Muslim"],
+  ["“The first thing a servant will be asked about on the Day of Judgement is his prayer.”","Tirmidhi and Nasa'i"]
+];
+var KEY="qada-app-v2", OLDKEY="qada-v1", DAY=864e5;
+var storageOK=true;
+var ICON_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 12.5 4 4 8-9"/></svg>';
+var ICON_FLAME='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5 5 5.5 5 11a5 5 0 0 1-10 0c0-2.6 1.3-4.3 2.6-5.6.2 1.7 1 2.8 2.1 3.3C11.4 8 11.2 5 12 2Z"/></svg>';
+
+function blank(){return {v:2,onboarded:false,profile:{age:25,puberty:15,prayedYears:0,madhab:"hanafi"},goal:1,done:{},log:{},badges:[],created:dayKey(new Date())};}
+
+/* A prayer day runs from 3am to 3am, so a late Isha counts for the same day */
+function dayKey(d){var x=new Date(d.getTime()-3*36e5);return x.getFullYear()+"-"+pad(x.getMonth()+1)+"-"+pad(x.getDate());}
+function pad(n){return (n<10?"0":"")+n;}
+function keyToDate(k){var p=k.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
+function shiftKey(k,days){var d=keyToDate(k);d.setDate(d.getDate()+days);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+
+var s=load();
+function load(){
+  var st=null;
+  try{var raw=localStorage.getItem(KEY);if(raw)st=JSON.parse(raw);}catch(e){storageOK=false;}
+  if(st&&st.v===2){var b=blank();for(var k in b)if(!(k in st))st[k]=b[k];return st;}
+  st=blank();
+  // Bring across progress from the earlier simple tracker, if this browser has it
+  try{
+    var o=localStorage.getItem(OLDKEY);
+    if(o){o=JSON.parse(o);
+      st.profile={age:+o.age||29,puberty:+(o.start!=null?o.start:13),prayedYears:+o.prayed||0,madhab:o.madhab==="other"?"other":"hanafi"};
+      st.done=o.done||{};
+      if(o.today&&o.today.done){var t={};for(var kk in o.today.done)if(o.today.done[kk])t[kk]=1;st.log[dayKey(new Date())]=t;}
+      st.onboarded=true;st.migrated=true;
+    }
+  }catch(e){}
+  return st;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(s));storageOK=true;}catch(e){storageOK=false;}}
+
+/* ---------- Calculations ---------- */
+function active(){return PRAYERS.filter(function(p){return !p.hanafi||s.profile.madhab==="hanafi";});}
+function owedYears(pr){pr=pr||s.profile;return Math.max(0,(+pr.age||0)-(+pr.puberty||0)-(+pr.prayedYears||0));}
+function owedEach(pr){return Math.round(owedYears(pr)*365.25);}
+function doneOf(k){return Math.min(owedEach(),s.done[k]||0);}
+function totals(){
+  var ps=active(),each=owedEach(),total=each*ps.length,done=0,maxLeft=0;
+  ps.forEach(function(p){var d=doneOf(p.k);done+=d;maxLeft=Math.max(maxLeft,each-d);});
+  return {total:total,done:done,left:total-done,maxLeft:maxLeft,each:each,count:ps.length};
+}
+function allTimeDone(){var n=0;active().forEach(function(p){n+=s.done[p.k]||0;});return n;}
+function dayTotal(k){var d=s.log[k];if(!d)return 0;var n=0;active().forEach(function(p){n+=d[p.k]||0;});return n;}
+function dayFull(k){var d=s.log[k]||{};return active().every(function(p){return (d[p.k]||0)>=s.goal;});}
+function streaks(){
+  var today=dayKey(new Date()),cur=0,k=today;
+  if(!dayTotal(k))k=shiftKey(k,-1);
+  while(dayTotal(k)>0){cur++;k=shiftKey(k,-1);}
+  var keys=Object.keys(s.log).filter(function(x){return dayTotal(x)>0;}).sort(),best=0,run=0,prev=null;
+  keys.forEach(function(x){run=(prev&&shiftKey(prev,1)===x)?run+1:1;best=Math.max(best,run);prev=x;});
+  var full=Object.keys(s.log).filter(dayFull).length;
+  return {cur:cur,best:Math.max(best,cur),full:full};
+}
+function pace(){ // average sets per day over the last 14 days you've had the app
+  var today=dayKey(new Date()),span=Math.max(1,Math.min(14,Math.round((keyToDate(today)-keyToDate(s.created))/DAY)+1)),n=0;
+  for(var i=0;i<span;i++)n+=dayTotal(shiftKey(today,-i));
+  return n/active().length/span;
+}
+
+/* ---------- Milestones ---------- */
+var BADGES=[
+  {id:"first",m:"1",t:"First qada",ok:function(x){return x.all>=1;}},
+  {id:"full1",m:"1",t:"First full day",ok:function(x){return x.st.full>=1;}},
+  {id:"s7",m:"7",t:"7-day streak",ok:function(x){return x.st.best>=7;}},
+  {id:"c100",m:"100",t:"100 prayers",ok:function(x){return x.all>=100;}},
+  {id:"s30",m:"30",t:"30-day streak",ok:function(x){return x.st.best>=30;}},
+  {id:"c1000",m:"1k",t:"1,000 prayers",ok:function(x){return x.all>=1000;}},
+  {id:"p10",m:"10%",t:"10% made up",ok:function(x){return x.pct>=10;}},
+  {id:"p25",m:"25%",t:"A quarter done",ok:function(x){return x.pct>=25;}},
+  {id:"s100",m:"100",t:"100-day streak",ok:function(x){return x.st.best>=100;}},
+  {id:"p50",m:"50%",t:"Halfway",ok:function(x){return x.pct>=50;}},
+  {id:"p75",m:"75%",t:"Three quarters",ok:function(x){return x.pct>=75;}},
+  {id:"p100",m:"✓",t:"All made up",ok:function(x){return x.pct>=100&&x.t.total>0;}}
+];
+function badgeCtx(){var t=totals();return {t:t,all:allTimeDone(),st:streaks(),pct:t.total?t.done/t.total*100:0};}
+function checkBadges(quiet){
+  var x=badgeCtx(),fresh=[];
+  BADGES.forEach(function(b){if(b.ok(x)&&s.badges.indexOf(b.id)<0){s.badges.push(b.id);fresh.push(b);}});
+  if(fresh.length&&!quiet)toast("Milestone: "+fresh[fresh.length-1].t+". MashaAllah!");
+  return fresh.length;
+}
+
+/* ---------- Helpers ---------- */
+var $=function(id){return document.getElementById(id);};
+function fmt(n){return Math.round(n).toLocaleString("en-AU");}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function yrs(days){var y=days/365.25;return y>=1?(y<10?parseFloat(y.toFixed(1)):Math.round(y))+" years":Math.max(1,Math.ceil(days))+" days";}
+var tt;
+function toast(msg){var el=$("toast");el.textContent=msg;el.hidden=false;clearTimeout(tt);tt=setTimeout(function(){el.hidden=true;},2800);}
+function hijri(d){try{return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(d).replace(/\s?AH$/,"")+" AH";}catch(e){return "";}}
+
+/* ---------- Setup flow ---------- */
+var ob={step:0,p:JSON.parse(JSON.stringify(s.profile)),goal:s.goal,err:""};
+var OB_STEPS=5;
+function stepper(f,val,step){return '<div class="stepper"><button type="button" data-a="dec" data-f="'+f+'" aria-label="Decrease">−</button><input id="ob-'+f+'" type="number" inputmode="decimal" min="0" step="'+(step||1)+'" value="'+val+'" data-f="'+f+'" aria-label="'+f+'"><button type="button" data-a="inc" data-f="'+f+'" aria-label="Increase">+</button></div>';}
+function renderOB(){
+  var p=ob.p,h="",st=ob.step,canBack=st>0;
+  if(st===0){
+    h='<svg class="hero-mark" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="var(--soft)"/><circle cx="36" cy="36" r="24" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="36" cy="36" r="24" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="50" transform="rotate(-90 36 36)"/><path d="m27 37 6 6 12-13" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<h1>Make up your missed prayers, one day at a time</h1>'+
+      '<p class="muted">Answer four quick questions and we\'ll work out roughly how many prayers you owe. Then tick off each qada as you pray it.</p>'+
+      '<div class="banner">Free, with no ads and no account. Everything stays on your phone.</div>';
+  }else if(st===1){
+    h='<span class="label">Question 1 of 4</span><h1>How old are you?</h1>'+stepper("age",p.age)+'<p class="muted small">Your age in years today.</p>';
+  }else if(st===2){
+    h='<span class="label">Question 2 of 4</span><h1>How old were you when you reached puberty?</h1>'+stepper("puberty",p.puberty)+
+      '<div class="row"><button type="button" class="chip'+(p.puberty==15?' on':'')+'" data-a="unsure">Not sure, use 15</button></div>'+
+      '<p class="muted small">Prayer becomes obligatory from puberty. If you can\'t remember, most scholars use 15.</p>';
+  }else if(st===3){
+    h='<span class="label">Question 3 of 4</span><h1>Were there years you prayed all five regularly?</h1>'+stepper("prayedYears",p.prayedYears,0.5)+
+      '<p class="muted small">Add up any stretches when you didn\'t miss prayers. Leave it at 0 if you\'re not sure. You can change this later.</p>';
+  }else if(st===4){
+    h='<span class="label">Question 4 of 4</span><h1>Which madhab do you follow?</h1>'+
+      '<button type="button" class="choice'+(p.madhab==="hanafi"?" on":"")+'" data-a="madhab" data-v="hanafi"><b>Hanafi</b><span class="muted small">Witr is wajib, so missed Witr is counted too. Most Afghans, Pakistanis, Indians, Bangladeshis and Turks are Hanafi.</span></button>'+
+      '<button type="button" class="choice'+(p.madhab==="other"?" on":"")+'" data-a="madhab" data-v="other"><b>Shafi\'i, Maliki or Hanbali</b><span class="muted small">The five daily prayers are counted.</span></button>'+
+      '<p class="muted small">Not sure? Go with your family\'s background, or ask your local imam.</p>';
+  }else{
+    var each=owedEach(p),n=p.madhab==="hanafi"?6:5;
+    h='<span class="label">Your estimate</span><p class="result-num num">'+fmt(each*n)+'</p>'+
+      '<p>prayers to make up: about <b class="num">'+fmt(each)+'</b> of each '+(n===6?"prayer, including Witr":"prayer")+', over '+owedYears(p)+' years.</p>'+
+      '<p class="muted small">That number can feel big. It shrinks every day you keep going, and every qada counts.</p>'+
+      '<h2 style="margin-top:8px">How many sets a day?</h2><p class="muted small">A set is one qada of each prayer. Most people pray one qada straight after each prayer.</p>'+
+      [1,2,3].map(function(g){return '<button type="button" class="choice'+(ob.goal===g?" on":"")+'" data-a="goal" data-v="'+g+'"><b>'+g+' set'+(g>1?"s":"")+' a day'+(g===1?" (recommended to start)":"")+'</b><span class="muted small">Finished in about '+yrs(each/g)+'</span></button>';}).join("");
+  }
+  var dots="";for(var i=0;i<=OB_STEPS;i++)dots+='<i class="'+(i<=st?"on":"")+'"></i>';
+  $("onboard").innerHTML='<div class="wrap"><div class="dots" aria-hidden="true">'+dots+'</div><div class="ob-body">'+h+(ob.err?'<p class="err" role="alert">'+esc(ob.err)+'</p>':'')+'</div>'+
+    '<div class="ob-foot">'+(canBack?'<button type="button" class="btn ghost" data-a="back">Back</button>':'')+'<button type="button" class="btn prim" data-a="next">'+(st===0?"Get started":st===OB_STEPS?"Start today":"Next")+'</button></div></div>';
+}
+function obValidate(){
+  var p=ob.p;
+  if(ob.step===1&&(!(p.age>=8)||p.age>120))return "Enter an age between 8 and 120.";
+  if(ob.step===2&&(!(p.puberty>=8)||p.puberty>=p.age))return "Puberty age should be at least 8 and below your current age ("+p.age+").";
+  if(ob.step===3&&(p.prayedYears<0||p.prayedYears>p.age-p.puberty))return "That's more than the "+(p.age-p.puberty)+" years since puberty.";
+  return "";
+}
+$("onboard").addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,p=ob.p;
+  if(a==="inc"||a==="dec"){var f=b.dataset.f,step=f==="prayedYears"?0.5:1;p[f]=Math.max(0,(+p[f]||0)+(a==="inc"?step:-step));ob.err="";renderOB();return;}
+  if(a==="unsure"){p.puberty=15;ob.err="";renderOB();return;}
+  if(a==="madhab"){p.madhab=b.dataset.v;renderOB();return;}
+  if(a==="goal"){ob.goal=+b.dataset.v;renderOB();return;}
+  if(a==="back"){ob.step=Math.max(0,ob.step-1);ob.err="";renderOB();return;}
+  if(a==="next"){
+    ob.err=obValidate();if(ob.err){renderOB();return;}
+    if(ob.step<OB_STEPS){ob.step++;renderOB();window.scrollTo(0,0);return;}
+    s.profile=ob.p;s.goal=ob.goal;s.onboarded=true;s.created=s.created||dayKey(new Date());save();
+    show();toast("Bismillah. Your first qada is waiting below.");
+  }
+});
+$("onboard").addEventListener("input",function(e){var f=e.target.dataset.f;if(!f)return;ob.p[f]=parseFloat(e.target.value)||0;ob.err="";});
+
+/* ---------- Screens ---------- */
+var tab="today";
+try{var lt=sessionStorage.getItem("qada-tab");if(lt)tab=lt;}catch(e){}
+function show(){
+  $("onboard").hidden=s.onboarded;$("app").hidden=!s.onboarded;
+  if(!s.onboarded){renderOB();return;}
+  document.querySelectorAll(".tab").forEach(function(t){if(t.dataset.tab===tab)t.setAttribute("aria-current","page");else t.removeAttribute("aria-current");});
+  ({today:renderToday,progress:renderProgress,settings:renderSettings})[tab]();
+}
+document.querySelector(".tabbar").addEventListener("click",function(e){var t=e.target.closest(".tab");if(!t)return;tab=t.dataset.tab;try{sessionStorage.setItem("qada-tab",tab);}catch(er){}show();window.scrollTo(0,0);});
+
+function ring(pct){var r=46,c=2*Math.PI*r,off=c*(1-Math.min(100,pct)/100);
+  return '<div class="ring"><svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="'+r+'" fill="none" stroke="var(--soft)" stroke-width="12"/><circle cx="56" cy="56" r="'+r+'" fill="none" stroke="var(--gold)" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><div class="pct num">'+(pct>0&&pct<1?pct.toFixed(2):Math.floor(pct))+'%</div></div>';}
+
+var popKey=null;
+function renderToday(){
+  var now=new Date(),tk=dayKey(now),t=totals(),pct=t.total?t.done/t.total*100:0,st=streaks(),log=s.log[tk]||{},ps=active();
+  var doneRows=ps.filter(function(p){return (log[p.k]||0)>=s.goal;}).length;
+  var q=QUOTES[Math.floor(keyToDate(tk)/DAY)%QUOTES.length];
+  var rows=ps.map(function(p){
+    var c=log[p.k]||0,full=c>=s.goal,lab=s.goal>1&&!full?(c+"/"+s.goal):ICON_CHECK;
+    return '<div class="prow'+(full?" complete":"")+(popKey===p.k?" pop":"")+'"><div><div class="pname"><b>'+p.n+'</b><span class="ar" lang="ar">'+p.a+'</span></div>'+
+      '<div class="proutine">'+(p.k==="witr"?"After Isha: ":"")+p.routine+' → <em>'+p.r+' qada</em></div></div>'+
+      (c>0?'<button type="button" class="undo" data-a="undo" data-k="'+p.k+'" aria-label="Undo one '+p.n+' qada">Undo</button>':'<span></span>')+
+      '<button type="button" class="pbtn'+(c>0&&!full?" part":"")+'" data-a="tick" data-k="'+p.k+'" aria-label="I prayed a '+p.n+' qada ('+c+' of '+s.goal+' today)">'+lab+'</button></div>';
+  }).join("");
+  popKey=null;
+  $("screen").innerHTML=
+    (s.migrated?'<div class="banner">Your progress from the old tracker has been brought across. <button type="button" class="undo" data-a="dismiss">OK</button></div>':'')+
+    (!storageOK?'<div class="banner">This browser isn\'t saving your progress (private browsing may be on). Open the app in a normal window.</div>':'')+
+    '<div class="dateline"><span class="label">'+now.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"})+'</span><span class="muted small">'+hijri(now)+'</span></div>'+
+    '<section class="card hero">'+ring(pct)+'<div><span class="label">Prayers left</span><div class="left-num num">'+fmt(t.left)+'</div><div class="muted small num">'+fmt(t.done)+' made up so far</div>'+
+      (st.cur?'<div class="streak">'+ICON_FLAME+st.cur+'-day streak</div>':'<div class="streak">Start your streak today</div>')+'</div></section>'+
+    installCard()+'<section class="stack"><div class="sechead"><h2>Today\'s qada</h2><span class="muted small num">'+doneRows+' of '+ps.length+' done</span></div>'+
+      '<p class="muted small">Pray your normal prayer, then its qada, then tap the circle.</p>'+
+      '<div class="plist">'+rows+'</div>'+
+      '<button type="button" class="btn block" data-a="extra">+ I prayed an extra full set</button></section>'+
+    '<section class="quote"><p>'+q[0]+'</p><p class="muted small">'+q[1]+'</p></section>'+
+    '<p class="muted small">For each qada, intend “the earliest '+'Fajr (or Dhuhr, and so on) I owe”. Pray only the fard rak\'at. Avoid sunrise, when the sun is at its highest, and sunset.</p>';
+}
+function renderProgress(){
+  var t=totals(),st=streaks(),pct=t.total?t.done/t.total*100:0,pc=pace(),ps=active();
+  var used=Math.round((keyToDate(dayKey(new Date()))-keyToDate(s.created))/DAY)+1;if(used<7)pc=0;var rate=pc>0?pc:s.goal,days=rate?Math.ceil(t.maxLeft/rate):0,fin=new Date(Date.now()+days*DAY);
+  // last 14 days bar chart
+  var tk=dayKey(new Date()),N=14,W=336,H=150,pl=8,pr=8,pt=14,pb=24,cw=(W-pl-pr)/N,vals=[],keys=[];
+  for(var i=N-1;i>=0;i--){var k=shiftKey(tk,-i);keys.push(k);vals.push(dayTotal(k));}
+  var goalLine=s.goal*ps.length,max=Math.max(goalLine,Math.max.apply(null,vals)),y=function(v){return pt+(H-pt-pb)*(1-v/max);};
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Qada prayed each day for the last 14 days">'+
+    '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--line)"/>'+
+    '<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(goalLine)+'" y2="'+y(goalLine)+'" stroke="var(--gold)" stroke-dasharray="3 4"/>'+
+    '<text x="'+(W-pr)+'" y="'+(y(goalLine)-4)+'" text-anchor="end">daily goal '+goalLine+'</text>';
+  vals.forEach(function(v,i){var x=pl+i*cw+cw*0.18,w=cw*0.64,isT=i===N-1,d=keyToDate(keys[i]);
+    if(v>0)svg+='<rect x="'+x.toFixed(1)+'" y="'+y(v).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+(y(0)-y(v)).toFixed(1)+'" rx="3" fill="var(--accent)" opacity="'+(isT?1:0.55)+'"><title>'+v+' on '+d.toLocaleDateString("en-AU",{day:"numeric",month:"short"})+'</title></rect>';
+    else svg+='<rect x="'+x.toFixed(1)+'" y="'+(y(0)-2)+'" width="'+w.toFixed(1)+'" height="2" fill="var(--line)"/>';
+    svg+='<text x="'+(x+w/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle"'+(isT?' style="fill:var(--ink);font-weight:700"':'')+'>'+d.toLocaleDateString("en-AU",{weekday:"narrow"})+'</text>';});
+  svg+='</svg>';
+  var bars=ps.map(function(p){var d=doneOf(p.k),pp=t.each?d/t.each*100:0;return '<div class="barrow"><b>'+p.n+'</b><div class="track"><i style="width:'+pp.toFixed(2)+'%"></i></div><span class="muted small num">'+fmt(t.each-d)+' left</span></div>';}).join("");
+  var x=badgeCtx(),badges=BADGES.map(function(b){var got=s.badges.indexOf(b.id)>=0||b.ok(x);return '<div class="badge'+(got?" got":"")+'"><span class="medal">'+b.m+'</span>'+b.t+'</div>';}).join("");
+  $("screen").innerHTML='<h1>Progress</h1>'+
+    '<section class="stats">'+
+      '<div class="stat"><span class="label">Made up</span><span class="v num">'+fmt(t.done)+'</span><span class="muted small">'+(pct>0&&pct<1?pct.toFixed(2):pct.toFixed(1))+'% of '+fmt(t.total)+'</span></div>'+
+      '<div class="stat"><span class="label">Streak</span><span class="v num">'+st.cur+' day'+(st.cur===1?"":"s")+'</span><span class="muted small">Best: '+st.best+'</span></div>'+
+      '<div class="stat"><span class="label">Full days</span><span class="v num">'+st.full+'</span><span class="muted small">Every prayer done</span></div>'+
+      '<div class="stat"><span class="label">Finish</span><span class="v">'+(t.maxLeft?fin.toLocaleDateString("en-AU",{month:"short",year:"numeric"}):"Done")+'</span><span class="muted small">'+(t.maxLeft?"At "+(pc>0?"your pace":s.goal+" set"+(s.goal>1?"s":"")+" a day")+", "+yrs(days):"Alhamdulillah")+'</span></div>'+
+    '</section>'+
+    '<section class="card stack chart"><div class="sechead"><h2>Last 14 days</h2><span class="muted small">qada per day</span></div>'+svg+'</section>'+
+    '<section class="card stack"><h2>Left of each prayer</h2><div class="bars">'+bars+'</div></section>'+
+    '<section class="stack"><h2>Milestones</h2><div class="badges">'+badges+'</div></section>';
+}
+function renderSettings(){
+  var p=s.profile,ps=active();
+  $("screen").innerHTML='<h1>Settings</h1>'+
+    '<section class="card stack"><h2>My details</h2><div class="grid2">'+
+      '<div class="field"><label class="label" for="set-age">Age</label><input id="set-age" type="number" inputmode="decimal" data-p="age" value="'+p.age+'"></div>'+
+      '<div class="field"><label class="label" for="set-puberty">Age of puberty</label><input id="set-puberty" type="number" inputmode="decimal" data-p="puberty" value="'+p.puberty+'"></div>'+
+      '<div class="field"><label class="label" for="set-prayed">Years prayed regularly</label><input id="set-prayed" type="number" inputmode="decimal" step="0.5" data-p="prayedYears" value="'+p.prayedYears+'"></div>'+
+      '<div class="field"><label class="label" for="set-madhab">Madhab</label><select id="set-madhab" data-p="madhab"><option value="hanafi"'+(p.madhab==="hanafi"?" selected":"")+'>Hanafi (Witr counted)</option><option value="other"'+(p.madhab==="other"?" selected":"")+'>Shafi\'i, Maliki or Hanbali</option></select></div>'+
+      '<div class="field"><label class="label" for="set-goal">Daily goal</label><select id="set-goal" data-g="1">'+[1,2,3,4,5].map(function(g){return '<option value="'+g+'"'+(s.goal===g?" selected":"")+'>'+g+' set'+(g>1?"s":"")+' a day</option>';}).join("")+'</select></div>'+
+    '</div><p class="muted small" id="set-msg">About '+fmt(owedEach())+' of each prayer owed.</p></section>'+
+    '<section class="card stack"><h2>Already made some up?</h2><p class="muted small">If you prayed qada before using this app, enter how many of each you\'ve done in total.</p><div class="grid2">'+
+      ps.map(function(q){return '<div class="field"><label class="label" for="adj-'+q.k+'">'+q.n+'</label><input id="adj-'+q.k+'" type="number" inputmode="numeric" min="0" data-adj="'+q.k+'" value="'+(s.done[q.k]||0)+'"></div>';}).join("")+
+    '</div></section>'+
+    '<section class="card stack"><h2>Add to your home screen</h2>'+(isStandalone()?'<p class="muted small">Installed on this phone. Open it from your home screen.</p>':'<p class="muted small">It then opens like an app, works without internet, and keeps your progress.</p>'+installSteps())+'</section>'+
+    '<section class="card stack"><h2>Back up your progress</h2><p class="muted small">Your progress lives only on this phone. Copy your backup code and keep it somewhere safe, like your notes or email. Paste it here on a new phone to restore.</p>'+
+      '<div class="row"><button type="button" class="btn" data-a="copy">Copy backup code</button>'+(window.QADA_HOSTED?'<button type="button" class="btn" data-a="download">Save backup file</button>':'')+'</div>'+
+      '<textarea id="backup" placeholder="Paste a backup code here to restore" aria-label="Backup code"></textarea>'+
+      '<button type="button" class="btn" data-a="restore">Restore from code</button></section>'+
+    '<section class="card stack"><h2>Start over</h2><p class="muted small">Clears your details and all progress on this phone.</p><button type="button" class="btn danger" data-a="reset" id="reset-btn">Reset everything</button></section>'+
+    '<section class="card about"><h2>About</h2><p class="muted small" style="margin-top:8px">Qada Tracker is free, with no ads and no account, made as sadaqah jariyah. Nothing you enter leaves your phone.</p><p class="muted small">The counts are an estimate to help you plan. For questions about your own situation, ask a trusted imam.</p></section>';
+}
+
+/* ---------- Home screen install ---------- */
+var deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e;if(s.onboarded)show();});
+window.addEventListener("appinstalled",function(){deferredPrompt=null;s.installDismissed=true;save();toast("Installed. Open it from your home screen.");if(s.onboarded)show();});
+function isStandalone(){try{return window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;}catch(e){return false;}}
+function platform(){var u=navigator.userAgent||"";if(/iphone|ipad|ipod/i.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return "ios";if(/android/i.test(u))return "android";return "other";}
+function installSteps(){
+  if(deferredPrompt)return '<button type="button" class="btn prim block" data-a="install">Install Qada Tracker</button>';
+  var ios='<li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (the square with an arrow pointing up).</li><li>Scroll down, tap <b>Add to Home Screen</b>, then tap <b>Add</b>.</li>';
+  var and='<li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu at the top right.</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>, then confirm.</li>';
+  var p=platform();
+  if(p==="ios")return '<ol class="steps">'+ios+'</ol>';
+  if(p==="android")return '<ol class="steps">'+and+'</ol>';
+  return '<p class="small"><b>iPhone</b></p><ol class="steps">'+ios+'</ol><p class="small"><b>Android</b></p><ol class="steps">'+and+'</ol>';
+}
+function installCard(){
+  if(isStandalone()||s.installDismissed)return "";
+  return '<section class="card stack install"><div class="sechead"><h2>Add it to your home screen</h2><button type="button" class="undo" data-a="hide-install">Hide</button></div><p class="muted small">It then opens like an app, works without internet, and keeps your progress.</p>'+installSteps()+'</section>';
+}
+
+/* ---------- Actions ---------- */
+function bump(k,dir){
+  var tk=dayKey(new Date());s.log[tk]=s.log[tk]||{};
+  if(dir>0){s.done[k]=(s.done[k]||0)+1;s.log[tk][k]=(s.log[tk][k]||0)+1;}
+  else if((s.log[tk][k]||0)>0){s.log[tk][k]--;s.done[k]=Math.max(0,(s.done[k]||0)-1);}
+}
+$("screen").addEventListener("click",function(e){
+  var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,k=b.dataset.k,tk=dayKey(new Date());
+  if(a==="install"&&deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;show();},function(){deferredPrompt=null;show();});return;}
+  if(a==="hide-install"){s.installDismissed=true;save();show();toast("You can find these steps in Settings");return;}
+  if(a==="tick"){
+    var wasFull=dayFull(tk);bump(k,1);popKey=k;save();
+    var got=checkBadges();save();renderToday();
+    if(!got){if(!wasFull&&dayFull(tk))toast("Today's qada done. May Allah accept it from you.");else toast(PRAYERS.filter(function(p){return p.k===k;})[0].n+" qada logged");}
+    try{navigator.vibrate&&navigator.vibrate(12);}catch(er){}
+  }else if(a==="undo"){bump(k,-1);save();renderToday();toast("Undone");}
+  else if(a==="extra"){active().forEach(function(p){bump(p.k,1);});save();if(!checkBadges())toast("Extra set added. MashaAllah!");save();renderToday();}
+  else if(a==="dismiss"){delete s.migrated;save();renderToday();}
+  else if(a==="copy"){
+    var code=backupCode(),ta=$("backup");
+    var done=function(){toast("Backup code copied");},fail=function(){ta.value=code;ta.focus();ta.select();toast("Code shown below. Copy it from the box.");};
+    try{navigator.clipboard.writeText(code).then(done,fail);}catch(er){fail();}
+  }else if(a==="download"){
+    var blob=new Blob([JSON.stringify(s)],{type:"application/json"}),u=URL.createObjectURL(blob),l=document.createElement("a");
+    l.href=u;l.download="qada-backup-"+tk+".json";document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u);},1000);
+  }else if(a==="restore"){
+    var v=$("backup").value.trim();if(!v){toast("Paste your backup code first");return;}
+    try{var o=v.charAt(0)==="{"?JSON.parse(v):JSON.parse(decodeURIComponent(escape(atob(v))));
+      if(!o||o.v!==2||!o.profile)throw 0;s=o;save();toast("Progress restored");show();
+    }catch(er){toast("That code didn't work. Check you copied all of it.");}
+  }else if(a==="reset"){
+    if(b.dataset.armed){tryRemove();s=blank();ob={step:0,p:JSON.parse(JSON.stringify(s.profile)),goal:1,err:""};tab="today";save();show();window.scrollTo(0,0);return;}
+    b.dataset.armed="1";b.textContent="Tap again to erase everything";setTimeout(function(){if(b.isConnected){delete b.dataset.armed;b.textContent="Reset everything";}},4000);
+  }
+});
+function tryRemove(){try{localStorage.removeItem(KEY);}catch(e){}}
+function backupCode(){return btoa(unescape(encodeURIComponent(JSON.stringify(s))));}
+$("screen").addEventListener("change",function(e){
+  var el=e.target;
+  if(el.dataset.p){var f=el.dataset.p,v=f==="madhab"?el.value:Math.max(0,parseFloat(el.value)||0);
+    var np=Object.assign({},s.profile);np[f]=v;
+    if(np.puberty>=np.age||np.age-np.puberty<np.prayedYears){$("set-msg").textContent="Check the numbers: puberty must be below your age, and years prayed can't be more than the years since.";return;}
+    s.profile=np;save();checkBadges(true);save();renderSettings();toast("Saved");}
+  else if(el.dataset.g){s.goal=+el.value;save();toast("Daily goal updated");}
+  else if(el.dataset.adj){var k=el.dataset.adj,v2=Math.max(0,Math.round(+el.value||0)),tk=dayKey(new Date()),todayC=(s.log[tk]&&s.log[tk][k])||0;
+    s.done[k]=Math.max(v2,todayC);el.value=s.done[k];save();checkBadges(true);save();toast("Saved");}
+});
+
+/* Re-render when the day changes or the app comes back to the front */
+var lastDay=dayKey(new Date());
+function tick(){var d=dayKey(new Date());if(d!==lastDay){lastDay=d;if(s.onboarded&&tab!=="settings")show();}}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)tick();});
+setInterval(tick,60000);
+
+if(s.onboarded)checkBadges(true);
+save();show();
+window.__qada={state:function(){return s;},totals:totals,streaks:streaks,dayKey:dayKey};
+})();
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+</body>
+</html>

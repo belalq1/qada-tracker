@@ -23,15 +23,16 @@ Made as **sadaqah jariyah**. It's free, with no ads, no account and no tracking.
 
 This app is meant to outlive any one person or website. If the link above ever stops working, anyone can put it back online for free:
 
-1. Download this repository (**Code → Download ZIP**).
-2. Upload the `docs` folder to any static host. For example, drag the folder onto https://app.netlify.com/drop, or fork this repo and turn on GitHub Pages from the `docs` folder.
+1. Download this repository (**Code → Download ZIP**) and unzip it.
+2. Put the folder on any free static host. For example, drag it onto https://app.netlify.com/drop, or fork this repo and turn on GitHub Pages (Settings → Pages → Deploy from branch → `main`, root).
 
 Progress is stored on each person's phone, so a new copy starts fresh. People can move across using the backup code in Settings.
 
 ## For developers
 
-- `src/app.html` holds the whole app in one file.
-- `python3 build.py` builds the installable site (manifest, offline service worker and icons) into `docs/`. It needs Pillow.
+- `index.html` is the whole app: markup, styles and script in one file. Edit it directly.
+- `manifest.webmanifest` and the PNG icons let phones install it. `sw.js` makes it work offline.
+- After changing the app, bump the version in `sw.js` (the `qada-1.0.0` cache name) so installed copies pick up the update.
 
 ## A note on the rulings
 
