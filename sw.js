@@ -1,5 +1,5 @@
 // Offline support: the app shell is cached so it opens without internet.
-const CACHE = "qada-1.0.0";
+const CACHE = "qada-1.1.0";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {

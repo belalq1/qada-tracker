@@ -286,7 +286,8 @@ function renderOB(){
     h='<svg class="hero-mark" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="var(--soft)"/><circle cx="36" cy="36" r="24" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="36" cy="36" r="24" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="50" transform="rotate(-90 36 36)"/><path d="m27 37 6 6 12-13" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
       '<h1>Make up your missed prayers, one day at a time</h1>'+
       '<p class="muted">Answer four quick questions and we\'ll work out roughly how many prayers you owe. Then tick off each qada as you pray it.</p>'+
-      '<div class="banner">Free, with no ads and no account. Everything stays on your phone.</div>';
+      '<div class="banner">Free, with no ads and no account. Everything stays on your phone.</div>'+
+      (isStandalone()?'':'<div class="card stack install"><h2>Add it to your home screen</h2><p class="muted small">Do this first so it opens like an app, works without internet and keeps your progress safe.</p>'+installSteps()+'</div>');
   }else if(st===1){
     h='<span class="label">Question 1 of 4</span><h1>How old are you?</h1>'+stepper("age",p.age)+'<p class="muted small">Your age in years today.</p>';
   }else if(st===2){
@@ -322,6 +323,7 @@ function obValidate(){
 }
 $("onboard").addEventListener("click",function(e){
   var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,p=ob.p;
+  if(a==="install"&&deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;show();},function(){deferredPrompt=null;show();});return;}
   if(a==="inc"||a==="dec"){var f=b.dataset.f,step=f==="prayedYears"?0.5:1;p[f]=Math.max(0,(+p[f]||0)+(a==="inc"?step:-step));ob.err="";renderOB();return;}
   if(a==="unsure"){p.puberty=15;ob.err="";renderOB();return;}
   if(a==="madhab"){p.madhab=b.dataset.v;renderOB();return;}
@@ -429,8 +431,8 @@ function renderSettings(){
 
 /* ---------- Home screen install ---------- */
 var deferredPrompt=null;
-window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e;if(s.onboarded)show();});
-window.addEventListener("appinstalled",function(){deferredPrompt=null;s.installDismissed=true;save();toast("Installed. Open it from your home screen.");if(s.onboarded)show();});
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e;show();});
+window.addEventListener("appinstalled",function(){deferredPrompt=null;s.installDismissed=true;save();toast("Installed. Open it from your home screen.");show();});
 function isStandalone(){try{return window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;}catch(e){return false;}}
 function platform(){var u=navigator.userAgent||"";if(/iphone|ipad|ipod/i.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return "ios";if(/android/i.test(u))return "android";return "other";}
 function installSteps(){
